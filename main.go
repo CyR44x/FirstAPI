@@ -18,7 +18,7 @@ func HelloHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func MessageHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewDecoder(r.Body).Decode(&requestBody{})
+	json.NewDecoder(r.Body).Decode(&message)
 }
 
 func main() {
