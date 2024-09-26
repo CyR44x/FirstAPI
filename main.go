@@ -22,9 +22,15 @@ func MessageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Вызываем метод InitDB() из файла db.go
+	InitDB()
+
+	// Автоматическая миграция модели Message
+	DB.AutoMigrate(&Message{})
+
 	router := mux.NewRouter()
 	// наше приложение будет слушать запросы на localhost:8080/api/hello
-	router.HandleFunc("/api/hello", HelloHandler).Methods("GET")
 	router.HandleFunc("/api/hello", MessageHandler).Methods("POST")
+	router.HandleFunc("/api/hello", HelloHandler).Methods("GET")
 	http.ListenAndServe(":8080", router)
 }
