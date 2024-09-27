@@ -7,18 +7,22 @@ import (
 	"net/http"
 )
 
-var message requestBody
-
 type requestBody struct {
 	Message string `json:"message"`
 }
 
-func HelloHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "hello, %v", message)
+func GetMessages(w http.ResponseWriter, r *http.Request) {
+	var message []Message
+	DB.Find(&message)
+	json.NewEncoder(w).Encode(&message)
+	fmt.Fprint(w, message)
 }
 
-func MessageHandler(w http.ResponseWriter, r *http.Request) {
+func CreateMessage(w http.ResponseWriter, r *http.Request) {
+	var message requestBody
 	json.NewDecoder(r.Body).Decode(&message)
+	messageMessage := Message{Text: message.Message}
+	DB.Create(&messageMessage)
 }
 
 func main() {
@@ -29,8 +33,7 @@ func main() {
 	DB.AutoMigrate(&Message{})
 
 	router := mux.NewRouter()
-	// наше приложение будет слушать запросы на localhost:8080/api/hello
-	router.HandleFunc("/api/hello", MessageHandler).Methods("POST")
-	router.HandleFunc("/api/hello", HelloHandler).Methods("GET")
+	router.HandleFunc("/api/messages", CreateMessage).Methods("POST")
+	router.HandleFunc("/api/messages", GetMessages).Methods("GET")
 	http.ListenAndServe(":8080", router)
 }
