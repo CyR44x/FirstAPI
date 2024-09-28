@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -15,7 +14,6 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 	var message []Message
 	DB.Find(&message)
 	json.NewEncoder(w).Encode(&message)
-	fmt.Fprint(w, message)
 }
 
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
