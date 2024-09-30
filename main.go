@@ -23,6 +23,16 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	DB.Create(&messageMessage)
 }
 
+func UpdateMessage(w http.ResponseWriter, r *http.Request) {
+	var id, updateMessage requestBody
+	json.NewDecoder(r.Body).Decode(&updateMessage)
+	var message Message
+	DB.Take(&message, id)
+	message.Text = updateMessage.Message
+	DB.Save(&message)
+	json.NewEncoder(w).Encode(&message)
+}
+
 func main() {
 	// Вызываем метод InitDB() из файла db.go
 	InitDB()
@@ -33,5 +43,6 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/messages", CreateMessage).Methods("POST")
 	router.HandleFunc("/api/messages", GetMessages).Methods("GET")
+	router.HandleFunc("/api/messages", UpdateMessage).Methods("PATCH")
 	http.ListenAndServe(":8080", router)
 }
