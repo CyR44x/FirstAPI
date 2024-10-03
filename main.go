@@ -7,6 +7,7 @@ import (
 )
 
 type requestBody struct {
+	ID      uint   `json:"id"`
 	Message string `json:"message"`
 }
 
@@ -19,27 +20,30 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	var message requestBody
 	json.NewDecoder(r.Body).Decode(&message)
-	messageMessage := Message{Text: message.Message}
-	DB.Create(&messageMessage)
+	DB.Create(&Message{Text: message.Message})
 }
 
 func UpdateMessage(w http.ResponseWriter, r *http.Request) {
-	var id, updateMessage requestBody
-	json.NewDecoder(r.Body).Decode(&updateMessage)
-	var message Message
-	DB.Take(&message, id)
-	message.Text = updateMessage.Message
-	DB.Save(&message)
-	json.NewEncoder(w).Encode(&message)
+	var message requestBody
+	json.NewDecoder(r.Body).Decode(&message)
+	DB.Where("ID = ?", &message.Message).Update("text", "message")
 }
 
 func DeleteMessage(w http.ResponseWriter, r *http.Request) {
-	var message Message
-	//var id requestBody
-	//json.NewDecoder(r.Body).Decode(&id)
-	DB.Delete(&message, "ID")
-	json.NewEncoder(w).Encode(&message)
+	var message requestBody
+	json.NewDecoder(r.Body).Decode(&message)
+	// Удаляем запись по id
+	DB.Where("ID = ?", message.ID).Delete(&Message{})
+	//var message Message
+	//json.NewDecoder(r.Body).Decode(&message)
 
+	//vars := mux.Vars(r) // Получаем переменные из URL
+
+	// Получаем ID из параметров
+	//id := vars["id"]
+
+	// Удаляем запись по ID
+	//DB.Where("ID = ?", id).Delete(&Message{})
 }
 
 func main() {
