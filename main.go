@@ -26,24 +26,15 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 func UpdateMessage(w http.ResponseWriter, r *http.Request) {
 	var message requestBody
 	json.NewDecoder(r.Body).Decode(&message)
-	DB.Where("ID = ?", &message.Message).Update("text", "message")
+	DB.Model(&Message{}).Where("id = ?", &message.ID).Update("text", message.Message)
 }
 
 func DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	var message requestBody
 	json.NewDecoder(r.Body).Decode(&message)
 	// Удаляем запись по id
-	DB.Where("ID = ?", message.ID).Delete(&Message{})
-	//var message Message
-	//json.NewDecoder(r.Body).Decode(&message)
-
-	//vars := mux.Vars(r) // Получаем переменные из URL
-
-	// Получаем ID из параметров
-	//id := vars["id"]
-
-	// Удаляем запись по ID
-	//DB.Where("ID = ?", id).Delete(&Message{})
+	DB.Model(&Message{}).Where("id = ?", message.ID).Delete(&Message{})
+	//DB.Model(&Message{}).Where("id = ?", message.ID).Update("deleted_at", time.Now())
 }
 
 func main() {
