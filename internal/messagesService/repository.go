@@ -4,12 +4,9 @@ import "gorm.io/gorm"
 
 type MessageRepository interface {
 	CreateMessage(message Message) (Message, error)
-
 	GetAllMessages() ([]Message, error)
-
-	UpdateMessageByID(id uint, message Message) (Message, error)
-
-	DeleteMessageByID(id uint) error
+	UpdateMessageByID(id int, message Message) (Message, error)
+	DeleteMessageByID(id int) error
 }
 
 type messageRepository struct {
@@ -22,10 +19,7 @@ func NewMessageRepository(db *gorm.DB) *messageRepository {
 
 func (r *messageRepository) CreateMessage(message Message) (Message, error) {
 	result := r.db.Create(&message)
-	if result.Error != nil {
-		return Message{}, result.Error
-	}
-	return message, nil
+	return message, result.Error
 }
 
 func (r *messageRepository) GetAllMessages() ([]Message, error) {
@@ -34,26 +28,18 @@ func (r *messageRepository) GetAllMessages() ([]Message, error) {
 	return messages, err
 }
 
-func (r *messageRepository) UpdateMessageByID(id uint, message Message) (Message, error) {
-
-	existingMessage := r.db.First(&message, id)
-	if existingMessage.Error != nil {
-		return Message{}, existingMessage.Error
+func (r *messageRepository) UpdateMessageByID(id int, message Message) (Message, error) {
+	existingMessage := Message{}
+	result := r.db.First(&existingMessage, id)
+	if result.Error != nil {
+		return Message{}, result.Error
 	}
 
-	updatedMessage := r.db.Model(&existingMessage).Updates(message)
-	if updatedMessage.Error != nil {
-		return Message{}, updatedMessage.Error
-	}
-
-	return message, nil
+	result = r.db.Model(&existingMessage).Updates(message)
+	return existingMessage, result.Error
 }
 
-func (r *messageRepository) DeleteMessageByID(id uint) error {
-	message := Message{}
-	result := r.db.Delete(&message, id)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+func (r *messageRepository) DeleteMessageByID(id int) error {
+	result := r.db.Delete(&Message{}, id)
+	return result.Error
 }
