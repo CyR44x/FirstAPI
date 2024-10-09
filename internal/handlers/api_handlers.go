@@ -4,6 +4,7 @@ import (
 	"RestApi/internal/messagesService" // Импортируем наш сервис
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -35,12 +36,17 @@ func (h *Handler) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
+	if message.Text == "" {
+		http.Error(w, "Message text is required", http.StatusBadRequest)
+		return
+	}
 
 	createdMessage, err := h.Service.CreateMessage(message)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Передаем в БД %v", createdMessage)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
