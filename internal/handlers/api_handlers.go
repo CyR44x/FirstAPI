@@ -4,25 +4,13 @@ import (
 	"RestApi/internal/messagesService" // Импортируем наш сервис
 	"RestApi/internal/web/messages"
 	"context"
-	"encoding/json"
-	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
+	"fmt"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
 	Service *messagesService.MessageService
 }
-
-//func (h Handler) GetMessages(ctx context.Context, request messages.GetMessagesRequestObject) (messages.GetMessagesResponseObject, error) {
-//TODO implement me
-//panic("implement me")
-//}
-
-//func (h Handler) PostMessages(ctx context.Context, request messages.PostMessagesRequestObject) (messages.PostMessagesResponseObject, error) {
-//TODO implement me
-//panic("implement me")
-//}
 
 // Нужна для создания структуры Handler на этапе инициализации приложения
 
@@ -54,16 +42,6 @@ func (h *Handler) GetMessages(_ context.Context, _ messages.GetMessagesRequestOb
 	return response, nil
 }
 
-//func (h *Handler) GetMessagesHandler(w http.ResponseWriter, r *http.Request) {
-//messages, err := h.Service.GetAllMessages()
-//if err != nil {
-//http.Error(w, err.Error(), http.StatusInternalServerError)
-//return
-//}
-//w.Header().Set("Content-Type", "application/json")
-//json.NewEncoder(w).Encode(messages)
-//}
-
 func (h *Handler) PostMessages(_ context.Context, request messages.PostMessagesRequestObject) (messages.PostMessagesResponseObject, error) {
 	// Распаковываем тело запроса напрямую, без декодера!
 	messageRequest := request.Body
@@ -83,81 +61,47 @@ func (h *Handler) PostMessages(_ context.Context, request messages.PostMessagesR
 	return response, nil
 }
 
-//func (h *Handler) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
-//var message messagesService.Message
-//err := json.NewDecoder(r.Body).Decode(&message)
-//if err != nil {
-//http.Error(w, "Invalid input", http.StatusBadRequest)
-//return
-//}
-//if message.Text == "" {
-//http.Error(w, "Message text is required", http.StatusBadRequest)
-//return
-//}
-
-//createdMessage, err := h.Service.CreateMessage(message)
-//if err != nil {
-//http.Error(w, err.Error(), http.StatusInternalServerError)
-//return
-//}
-//log.Printf("Передаем в БД %v", createdMessage)
-
-//w.Header().Set("Content-Type", "application/json")
-//w.WriteHeader(http.StatusCreated)
-//json.NewEncoder(w).Encode(createdMessage)
-//}
-
-func (h *Handler) UpdateMessageHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr, ok := vars["id"]
-	if !ok {
-		http.Error(w, "ID is required", http.StatusBadRequest)
-		return
+func (h *Handler) PatchMessagesId(_ context.Context, request messages.PatchMessagesIdRequestObject) (messages.PatchMessagesIdResponseObject, error) {
+	// Получаем новое содержимое сообщения из тела запроса
+	newMessage := request.Body.Message
+	if newMessage == nil {
+		// Возвращаем ошибку если новое сообщение не указано
+		return nil, fmt.Errorf("message content is required")
 	}
 
-	id, err := strconv.Atoi(idStr)
+	// Пытаемся обновить сообщение по ID
+	updatedMessage, err := h.Service.UpdateMessageByID(request.Id, messagesService.Message{Text: *newMessage})
 	if err != nil {
-		http.Error(w, "Invalid ID format", http.StatusBadRequest)
-		return
+		// Проверяем, если сообщение не найдено
+		if err == gorm.ErrRecordNotFound {
+			return messages.PatchMessagesId404Response{}, nil
+		}
+		// Возвращаем любую другую ошибку
+		return nil, err
 	}
 
-	var updatedMessageData messagesService.Message
-	err = json.NewDecoder(r.Body).Decode(&updatedMessageData)
-	if err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-		return
+	// Создаем ответ с обновленным сообщением
+	response := messages.PatchMessagesId200JSONResponse{
+		Id:      &updatedMessage.ID,
+		Message: &updatedMessage.Text,
 	}
 
-	updatedMessage, err := h.Service.UpdateMessageByID(id, updatedMessageData)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updatedMessage)
+	// Возвращаем ответ
+	return response, nil
 }
 
-func (h *Handler) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	idStr, ok := vars["id"]
-	if !ok {
-		http.Error(w, "ID is required", http.StatusBadRequest)
-		return
-	}
-
-	id, err := strconv.Atoi(idStr)
+func (h *Handler) DeleteMessagesId(_ context.Context, request messages.DeleteMessagesIdRequestObject) (messages.DeleteMessagesIdResponseObject, error) {
+	// Пытаемся удалить сообщение по ID
+	err := h.Service.DeleteMessageByID(request.Id)
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
-		return
+		// Проверяем, если сообщение не найдено
+		if err == gorm.ErrRecordNotFound {
+			return messages.DeleteMessagesId404Response{}, nil
+		}
+		// Возвращаем любую другую ошибку
+		return nil, err
 	}
 
-	err = h.Service.DeleteMessageByID(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-
+	// Возвращаем 204 No Content в случае успеха
+	return messages.DeleteMessagesId204Response{}, nil
 }

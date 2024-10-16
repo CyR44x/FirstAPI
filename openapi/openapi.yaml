@@ -35,7 +35,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Message'
-
+  /messages/{id}:
+    patch:
+      summary: Update a message by ID
+      tags:
+        - messages
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: The new message content
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Message updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Message not found
+    delete:
+      summary: Delete a message by ID
+      tags:
+        - messages
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Message deleted successfully
+        '404':
+          description: Message not found
 components:
   schemas:
     Message:
