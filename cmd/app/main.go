@@ -18,6 +18,10 @@ func main() {
 		log.Fatalf("Не удалось выполнить авто-миграцию: %v", err)
 	}
 
+	if err := database.DB.AutoMigrate(&userService.User{}); err != nil {
+		log.Fatalf("Не удалось выполнить авто-миграцию: %v", err)
+	}
+
 	messagesRepo := messagesService.NewMessageRepository(database.DB)
 	MessagesService := messagesService.NewService(messagesRepo)
 	messagesHandler := handlers.NewHandler(MessagesService)
